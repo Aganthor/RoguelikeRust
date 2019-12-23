@@ -1,6 +1,9 @@
-use rltk::{RGB, Rltk, Console};
+extern crate rltk;
+use rltk::{RGB, Rltk, Console, RandomNumberGenerator, Algorithm2D, BaseMap, Point};
 use super::{Rect};
 use std::cmp::{max, min};
+extern crate specs;
+use specs::prelude::*;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
@@ -18,30 +21,6 @@ impl Map {
     /// Helper function to calculate the proper place in the 1 dimensional array using x and y.
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         (y as usize * self.width as usize) + x as usize
-    }
-
-    /// Draw the map!
-    pub fn draw_map(map: &[TileType], ctx: &mut Rltk) {
-        let mut y = 0;
-        let mut x = 0;
-        for tile in map.iter() {
-            // Render a tile depending upon the tile type.
-            match tile {
-                TileType::Floor => {
-                    ctx.set(x, y, RGB::from_f32(0.5, 0.5, 0.5), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
-                }
-                TileType::Wall => {
-                    ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
-                }
-            }
-
-            // Move the coordinates
-            x += 1;
-            if x > 79 {
-                x = 0;
-                y += 1;
-            }
-        }
     }
 
     pub fn new_map_rooms_and_corridors() -> Map {
@@ -90,7 +69,7 @@ impl Map {
         map
     }
 
-    pub fn apply_room_to_map(&mut self, room: &Rect) {
+    fn apply_room_to_map(&mut self, room: &Rect) {
         for y in room.y1 +1 ..= room.y2 {
             for x in room.x1 + 1 ..= room.x2 {
                 let idx = self.xy_idx(x, y);
@@ -117,3 +96,66 @@ impl Map {
         }
     }
 }
+
+impl Algorithm2D for Map {
+    fn in_bounds(&self, pos : Point) -> bool {
+        pos.x > 0 && pos.x < self.width-1 && pos.y > 0 && pos.y < self.height-1
+    }
+
+    fn point2d_to_index(&self, pt: Point) -> i32 {
+        (pt.y * self.width) + pt.x
+    }
+
+    fn index_to_point2d(&self, idx:i32) -> Point {
+        Point{x: idx % self.width, y: idx / self.width }
+    }
+}
+
+impl BaseMap for Map {
+    fn is_opaque(&self, idx: i32) -> bool {
+        self.tiles[idx as usize] == TileType::Wall
+    }
+
+    fn get_available_exits(&self, _idx: i32) -> Vec<(i32, f32)> {
+        Vec::new()
+    }
+
+    fn get_pathing_distance(&self, idx1: i32, idx2: i32) -> f32 {
+        let p1 = Point::new(idx1 % self.width, idx1 / self.width);        
+        let p2 = Point::new(idx2 % self.width, idx2 / self.width);
+        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
+    }
+}
+
+    /// Draw the map!
+    pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
+        let mut viewsheds = ecs.write_storage::<Viewshed>();
+        let mut players = ecs.write_storage::<Player>();
+        let map = ecs.fetch::<Map>();
+
+        for (_player, viewshed) in (&mut players, &mut viewsheds).join() {
+            let mut y = 0;
+            let mut x = 0;
+            for tile in map.tiles.iter() {
+                // Render a tile depending upon the tile type.
+                let pt = Point::new(x,y);
+                if viewshed.visible_tiles.contains(&pt) {
+                    match tile {
+                        TileType::Floor => {
+                            ctx.set(x, y, RGB::from_f32(0.5, 0.5, 0.5), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
+                        }
+                        TileType::Wall => {
+                            ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
+                        }
+                    }
+                }
+            }
+
+            // Move the coordinates
+            x += 1;
+            if x > 79 {
+                x = 0;
+                y += 1;
+            }
+        }
+    }
