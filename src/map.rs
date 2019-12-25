@@ -45,8 +45,8 @@ impl Map {
         for _i in 0..MAX_ROOMS {
             let w = rng.range(MIN_SIZE, MAX_SIZE);
             let h = rng.range(MIN_SIZE, MAX_SIZE);
-            let x = rng.roll_dice(1, 80 - w - 1) - 1;
-            let y = rng.roll_dice(1, 50 - h - 1) - 1;
+            let x = rng.roll_dice(1, map.width - w - 1) - 1;
+            let y = rng.roll_dice(1, map.height - h - 1) - 1;
             let new_room = Rect::new(x, y, w, h);
             let mut ok = true;
             for other_room in map.rooms.iter() {
@@ -145,14 +145,12 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
             let mut fg;
             match tile {
                 TileType::Floor => {
-                    //ctx.set(x, y, RGB::from_f32(0.5, 0.5, 0.5), RGB::from_f32(0., 0., 0.), rltk::to_cp437('.'));
                     glyph = rltk::to_cp437('.');
-                    fg = RGB::from_f32(0.0, 0.5, 0.0);
+                    fg = RGB::from_f32(0.0, 0.5, 0.5);
                 }
                 TileType::Wall => {
-                    //ctx.set(x, y, RGB::from_f32(0.0, 1.0, 0.0), RGB::from_f32(0., 0., 0.), rltk::to_cp437('#'));
                     glyph = rltk::to_cp437('#');
-                    fg = RGB::from_f32(0., 0., 0.);
+                    fg = RGB::from_f32(0., 1.0, 0.);
                 }
             }
             if !map.visible_tiles[idx] { fg = fg.to_greyscale() }
