@@ -1,16 +1,18 @@
 extern crate specs;
 use specs::prelude::*;
-use super::{Viewshed, Monster, Name};
+use super::{Viewshed, Monster, Name, Position};
 extern crate rltk;
 use rltk::{Point, console};
 
 pub struct MonsterAI {}
 
 impl <'a> System<'a> for MonsterAI {
-    type SystemData = ( ReadExpect<'a, Point>,
+    type SystemData = ( WriteExpect<'a, Map>,
+                        ReadExpect<'a, Point>,
                         ReadStorage<'a, Viewshed>,
                         ReadStorage<'a, Monster>,
-                        ReadStorage<'a, Name>);
+                        ReadStorage<'a, Name>,
+                        WriteStorage<'a, Position>);
 
     fn run(&mut self, data : Self::SystemData) {
         let (player_pos, viewshed, monster, name) = data;
