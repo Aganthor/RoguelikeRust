@@ -18,13 +18,27 @@ pub struct Map {
     pub width : i32,
     pub height : i32,
     pub revealed_tiles : Vec<bool>,
-    pub visible_tiles : Vec<bool>
+    pub visible_tiles : Vec<bool>,
+    pub blocked : Vec<bool>,
+    pub tile_content : Vec<Vec<Entity>>
 }
 
 impl Map {
     /// Helper function to calculate the proper place in the 1 dimensional array using x and y.
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         (y as usize * self.width as usize) + x as usize
+    }
+
+    pub fn populate_blocked(&mut self) {
+        for (i, tile) in self.tiles.iter_mut().enumerate() {
+            self.blocked[i] = *tile == TileType::Wall;
+        }
+    }
+
+    pub fn clear_content_index(&mut self) {
+        for content in self.tile_content.iter_mut() {
+            content.clear();
+        }
     }
 
     pub fn new_map_rooms_and_corridors() -> Map {
@@ -34,7 +48,9 @@ impl Map {
             width : 80,
             height : 50,
             revealed_tiles : vec![false; 80*50],
-            visible_tiles : vec![false; 80*50]
+            visible_tiles : vec![false; 80*50],
+            blocked : vec![false; 80*50],
+            tile_content : vec![Vec::new(); 80*50]
         };
 
         const MAX_ROOMS : i32 = 30;
@@ -105,7 +121,7 @@ impl Map {
     fn is_exit_valid(&self, x:i32, y:i32) -> bool {
         if x < 1 || x > self.width-1 || y < 1 || y > self.height-1 { return false; }
         let idx = self.xy_idx(x, y);
-        self.tiles[idx as usize] != TileType::Wall
+        !self.blocked[idx]
     }
 }
 
@@ -138,6 +154,12 @@ impl BaseMap for Map {
         if self.is_exit_valid(x+1, y) { exits.push((idx+1, 1.0))};
         if self.is_exit_valid(x, y-1) { exits.push((idx-self.width, 1.0))};
         if self.is_exit_valid(x, y+1) { exits.push((idx+self.width, 1.0))};
+
+        // Diagonals
+        if self.is_exit_valid(x-1, y-1) { exits.push(((idx-self.width)-1, 1.45)); }
+        if self.is_exit_valid(x+1, y-1) { exits.push(((idx-self.width)+1, 1.45)); }
+        if self.is_exit_valid(x-1, y+1) { exits.push(((idx+self.width)-1, 1.45)); }
+        if self.is_exit_valid(x+1, y+1) { exits.push(((idx+self.width)+1, 1.45)); }
 
         exits
     }

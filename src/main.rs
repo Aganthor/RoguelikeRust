@@ -17,6 +17,8 @@ mod visibility_system;
 use visibility_system::VisibilitySystem;
 mod monster_ai_system;
 use monster_ai_system::MonsterAI;
+mod map_indexing_system;
+use map_indexing_system::MapIndexingSystem;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState { Paused, Running }
@@ -33,13 +35,17 @@ pub struct State {
 
 impl State {
     fn run_systems(&mut self) {
-        //RUn the Visibility system...
+        //Run the Visibility system...
         let mut vis = VisibilitySystem{};
         vis.run_now(&self.ecs);
 
         //Run the MonsterAI system...
         let mut mob = MonsterAI{};
         mob.run_now(&self.ecs);
+
+        //THe blocking system...
+        let mut mapindex = MapIndexingSystem{};
+        mapindex.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -89,6 +95,8 @@ fn main() {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
+    gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<CombatStats>();
 
     let map : Map = Map::new_map_rooms_and_corridors();
     let (player_x, player_y) = map.rooms[0].center();
@@ -116,6 +124,8 @@ fn main() {
             .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true})
             .with(Monster{})
             .with(Name{name: format!("{} #{}", &name, i) })
+            .with(BlocksTile{})
+            .with(CombatStats{ max_hp : 30, hp : 30, defense : 2, power : 5 })
             .build();
     }
 
@@ -133,6 +143,7 @@ fn main() {
         .with(Player{})
         .with(Viewshed{ visible_tiles : Vec::new(), range : 8 , dirty: true})
         .with(Name{name: "Player".to_string() })
+        .with(CombatStats{ max_hp : 16, hp : 16, defense : 1, power : 4 })
         .build();
 
     rltk::main_loop(context, gs);
