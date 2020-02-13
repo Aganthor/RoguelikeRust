@@ -1,6 +1,6 @@
 extern crate specs;
 use specs::prelude::*;
-use super::{Viewshed, Monster, Name, Position, Map};
+use super::{Viewshed, Monster, Name, Position, Map, WantsToMelee};
 extern crate rltk;
 use rltk::{Point, console};
 
@@ -17,7 +17,8 @@ impl <'a> System<'a> for MonsterAI {
 
     fn run(&mut self, data : Self::SystemData) {
         let (mut map, player_pos, mut viewshed, monster, name, mut position) = data;
-
+        let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
+        //TODO : PLayer attacking and killing things...
         for (mut viewshed,_monster, name, mut pos) in (&mut viewshed, &monster, &name, &mut position).join() {
             let distance = rltk::DistanceAlg::Pythagoras.distance2d(Point::new(pos.x, pos.y), *player_pos);
             if distance < 1.5 {

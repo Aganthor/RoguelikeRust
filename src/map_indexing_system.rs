@@ -7,8 +7,8 @@ pub struct MapIndexingSystem {}
 impl<'a> System<'a> for MapIndexingSystem {
     type SystemData = ( WriteExpect<'a, Map>,
                         ReadStorage<'a, Position>,
-                        ReadStorage<'a, BlocksTile>),
-                        Entities<'a>,;
+                        ReadStorage<'a, BlocksTile>,
+                        Entities<'a>,);
 
     fn run(&mut self, data : Self::SystemData) {
         let (mut map, position, blockers, entities) = data;
@@ -27,7 +27,7 @@ impl<'a> System<'a> for MapIndexingSystem {
             
             // Push the entity to the appropriate index slot. It's a Copy
             // type, so we don't need to clone it (we want to avoid moving it out of the ECS!)
-            // TODO 1.6 -> Indexing what is where...
+            map.tile_content[idx].push(entity);
         }
     }
 }
